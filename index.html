@@ -4,42 +4,366 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gravity Edge — XAUUSD Trading System</title>
-  <meta name="description" content="Autonomous XAUUSD intraday trading system being developed through nightly AI deep research. Targeting FTMO 10K Challenge.">
+  <meta name="description" content="Autonomous XAUUSD intraday trading system. Built through nightly AI research. FTMO 10K Challenge.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #08080c; --surface: #0f0f16; --surface-2: #16161f;
-      --border: #1e1e2e; --text: #e4e4e7; --text-dim: #71717a;
-      --gold: #c9a84c; --gold-dim: #a08832;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#08080c;--s:#0f0f16;--s2:#16161f;--b:#1e1e2e;--t:#e4e4e7;--td:#71717a;--gold:#c9a84c;--gd:#a08832}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--t);line-height:1.6;min-height:100vh}
+    .wrap{max-width:980px;margin:0 auto;padding:1.5rem}
+
+    /* Header */
+    header{text-align:center;padding:2.5rem 0 1.5rem;border-bottom:1px solid var(--b);margin-bottom:1.5rem}
+    .logo{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:500}
+    h1{font-size:2rem;font-weight:700;letter-spacing:-.02em;background:linear-gradient(135deg,var(--gold),#e8d5a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:.3rem 0}
+    .sub{color:var(--td);font-size:.85rem}
+    .meta{display:flex;gap:1.5rem;justify-content:center;margin-top:.75rem;font-size:.75rem;color:var(--td);font-family:'JetBrains Mono',monospace;flex-wrap:wrap}
+
+    /* Readiness */
+    .readiness-row{display:flex;align-items:center;gap:2rem;margin:1.5rem 0;justify-content:center;flex-wrap:wrap}
+    .readiness{text-align:center}
+    .readiness svg{display:block;margin:0 auto}
+    .readiness-phase{font-size:1rem;font-weight:700;margin-top:.3rem;letter-spacing:.05em}
+    .readiness-sub{font-size:.75rem;color:var(--td);margin-top:.2rem}
+
+    /* Pipeline SVG */
+    .pipeline{margin:1.5rem 0;overflow-x:auto;padding:.5rem 0}
+
+    /* FTMO Bar */
+    .ftmo{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem;background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.75rem 1rem;margin:1rem 0}
+    .ftmo-item{text-align:center}
+    .ftmo-item .fl{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--td);font-family:'JetBrains Mono',monospace}
+    .ftmo-item .fv{font-size:.9rem;font-weight:600;color:var(--gold)}
+
+    /* Tonight */
+    .tonight-summary{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:.75rem 1rem;font-size:.85rem;color:var(--td);margin:1rem 0}
+    .tonight-summary strong{color:var(--gold)}
+
+    /* Section Headers */
+    h2{font-size:.95rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);margin:2rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--b)}
+
+    /* Cards Grid */
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem}
+    .card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:1rem;transition:border-color .2s}
+    .card:hover{border-color:var(--gold)30}
+    .card-top{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem}
+    .card-icon{font-size:1.1rem}
+    .card-title{font-weight:600;font-size:.9rem;flex:1}
+    .card-badge{font-size:.65rem;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+    .card-eli5{font-size:.85rem;color:var(--td);margin-bottom:.5rem;line-height:1.4}
+    .card-points{padding-left:1rem;margin-bottom:.5rem}
+    .card-points li{font-size:.8rem;color:var(--t);margin-bottom:.25rem;line-height:1.4}
+    .conf-bar{height:4px;background:var(--s2);border-radius:2px;overflow:hidden;margin:.4rem 0 .15rem}
+    .conf-fill{height:100%;border-radius:2px;transition:width .5s ease}
+    .card-conf-label{font-size:.65rem;color:var(--td);font-family:'JetBrains Mono',monospace}
+    .needs-work{margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+    .nw-label{font-size:.65rem;color:var(--td);font-family:'JetBrains Mono',monospace}
+    .nw-tag{font-size:.65rem;background:#1f0f0f;color:#ef4444;border:1px solid #ef444430;padding:.1rem .4rem;border-radius:3px}
+
+    /* Blockers */
+    .blockers-section{margin:1.5rem 0}
+    .blocker{background:#1f0f0f;border:1px solid #ef444430;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .blocker-type{font-size:.6rem;background:#ef444420;color:#ef4444;padding:.15rem .4rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+    .blocker-desc{font-size:.85rem;flex:1}
+    .blocker-comp{font-size:.65rem;color:var(--td);font-family:'JetBrains Mono',monospace}
+
+    /* Signals */
+    .signals-section{margin:1.5rem 0}
+    .signal{background:linear-gradient(135deg,#1a1708,#0f0f16);border:1px solid var(--gold)30;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap}
+    .signal-icon{font-size:1.2rem;margin-top:.1rem}
+    .signal-body{flex:1;min-width:200px}
+    .signal-title{font-weight:600;font-size:.85rem;color:var(--gold)}
+    .signal-desc{font-size:.8rem;color:var(--td);margin-top:.2rem;line-height:1.4}
+    .signal-meta{display:flex;gap:.5rem;margin-top:.3rem;align-items:center}
+    .signal-status{font-size:.6rem;padding:.1rem .35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+    .signal-status.spotted{background:#c9a84c20;color:var(--gold)}
+    .signal-status.investigating{background:#3b82f620;color:#3b82f6}
+    .signal-status.confirmed{background:#22c55e20;color:#22c55e}
+    .signal-comp{font-size:.6rem;color:var(--td);font-family:'JetBrains Mono',monospace}
+
+    /* Timeline */
+    .tl-entry{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:var(--s);border:1px solid var(--b);border-radius:6px;margin-bottom:.4rem;flex-wrap:wrap}
+    .tl-night{font-size:.8rem;font-weight:600;min-width:80px}
+    .tl-date{font-size:.7rem;color:var(--td);font-family:'JetBrains Mono',monospace;min-width:60px}
+    .tl-questions{font-size:.7rem;color:var(--gold);font-family:'JetBrains Mono',monospace}
+    .tl-sum{font-size:.75rem;color:var(--td);flex:1;min-width:200px}
+
+    /* Footer */
+    footer{text-align:center;padding:1.5rem 0;margin-top:1.5rem;border-top:1px solid var(--b);font-size:.7rem;color:var(--td)}
+    footer a{color:var(--gd);text-decoration:none}
+
+    /* Done Banner */
+    .done-banner{background:linear-gradient(135deg,#0f2f14,#0f1f0f);border:2px solid #22c55e;border-radius:12px;padding:1.5rem;text-align:center;margin:1.5rem 0;animation:pulse 2s ease-in-out infinite}
+    .done-banner h2{border:none;color:#22c55e;font-size:1.3rem;margin:0 0 .5rem;padding:0}
+    .done-banner p{color:#86efac;font-size:.9rem}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #22c55e40}50%{box-shadow:0 0 20px 5px #22c55e20}}
+
+    @media(max-width:640px){
+      .wrap{padding:1rem}
+      h1{font-size:1.5rem}
+      .cards{grid-template-columns:1fr}
+      .readiness-row{flex-direction:column}
     }
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg); color: var(--text);
-      line-height: 1.6; min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .container { max-width: 600px; text-align: center; padding: 2rem; }
-    .logo { font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 0.5rem; }
-    h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.025em; background: linear-gradient(135deg, var(--gold), #e8d5a0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
-    .subtitle { color: var(--text-dim); margin-bottom: 2rem; }
-    .status { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .status-icon { font-size: 2rem; margin-bottom: 0.75rem; }
-    .status-text { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--gold); }
-    .meta { font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">Gravity Edge</div>
-    <h1>XAUUSD Trading System</h1>
-    <p class="subtitle">Autonomous research engine · FTMO 10K 2-Step Challenge</p>
-    <div class="status">
-      <div class="status-icon">🧠</div>
-      <div class="status-text">First research session tonight</div>
+  <div class="wrap">
+    <header>
+      <div class="logo">Gravity Edge</div>
+      <h1>XAUUSD Trading System</h1>
+      <p class="sub">Autonomous research engine · FTMO 10K 2-Step Challenge</p>
+      <div class="meta">
+        <span>📅 Night 1</span>
+        <span>🔄 Waiting for first night</span>
+        <span>📊 LAYING FOUNDATIONS</span>
+      </div>
+    </header>
+
+    
+
+    <div class="readiness-row">
+      
+    <div class="readiness">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="70" fill="none" stroke="#1e1e2e" stroke-width="10"/>
+        <circle cx="90" cy="90" r="70" fill="none" stroke="#3b82f6" stroke-width="10"
+          stroke-dasharray="439.822971502571" stroke-dashoffset="391.4424446372882"
+          stroke-linecap="round" transform="rotate(-90 90 90)"
+          style="transition: stroke-dashoffset 1s ease"/>
+        <text x="90" y="82" text-anchor="middle" fill="#e4e4e7" font-size="28" font-weight="700" font-family="Inter, sans-serif">11%</text>
+        <text x="90" y="102" text-anchor="middle" fill="#71717a" font-size="10" font-family="JetBrains Mono, monospace">COMPLETE</text>
+      </svg>
+      <div class="readiness-phase" style="color: #3b82f6">📚 LAYING FOUNDATIONS</div>
+      <div class="readiness-sub">0/9 components refined</div>
     </div>
-    <p class="meta">9 system components · 0% complete · Night 0</p>
+    </div>
+
+    <h2>Pipeline</h2>
+    <div class="pipeline"><svg viewBox="0 0 1050 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1050px;height:auto">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/></marker></defs>
+    
+      <rect x="40" y="30" width="170" height="80" rx="10" fill="#0f0f16" stroke="#3b82f6" stroke-width="2" opacity="0.95"/>
+      <text x="125" y="52" text-anchor="middle" fill="#e4e4e7" font-size="11" font-weight="600" font-family="Inter, sans-serif">📚 Foundations</text>
+      <rect x="52" y="64" width="146" height="6" rx="3" fill="#1e1e2e"/>
+      <rect x="52" y="64" width="37" height="6" rx="3" fill="#3b82f6"/>
+      <text x="125" y="81" text-anchor="middle" fill="#71717a" font-size="9" font-family="JetBrains Mono, monospace">25%</text>
+      <circle cx="80" cy="96" r="6" fill="#3b82f6" opacity="0.9"><title>FTMO Challenge Rules: Researching</title></circle><circle cx="102" cy="96" r="6" fill="#3b82f6" opacity="0.9"><title>XAUUSD Market Microstructure: Researching</title></circle>
+      <line x1="210" y1="70" x2="240" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+      <rect x="240" y="30" width="170" height="80" rx="10" fill="#0f0f16" stroke="#6b7280" stroke-width="2" opacity="0.95"/>
+      <text x="325" y="52" text-anchor="middle" fill="#e4e4e7" font-size="11" font-weight="600" font-family="Inter, sans-serif">🎯 Strategy</text>
+      <rect x="252" y="64" width="146" height="6" rx="3" fill="#1e1e2e"/>
+      <rect x="252" y="64" width="19" height="6" rx="3" fill="#6b7280"/>
+      <text x="325" y="81" text-anchor="middle" fill="#71717a" font-size="9" font-family="JetBrains Mono, monospace">13%</text>
+      <circle cx="280" cy="96" r="6" fill="#3b82f6" opacity="0.9"><title>Edge Hypothesis: Researching</title></circle><circle cx="302" cy="96" r="6" fill="#6b7280" opacity="0.9"><title>Entry Rules: Not Started</title></circle>
+      <line x1="410" y1="70" x2="440" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+      <rect x="440" y="30" width="170" height="80" rx="10" fill="#0f0f16" stroke="#6b7280" stroke-width="2" opacity="0.95"/>
+      <text x="525" y="52" text-anchor="middle" fill="#e4e4e7" font-size="11" font-weight="600" font-family="Inter, sans-serif">🛡️ Risk & Exit</text>
+      <rect x="452" y="64" width="146" height="6" rx="3" fill="#1e1e2e"/>
+      <rect x="452" y="64" width="0" height="6" rx="3" fill="#6b7280"/>
+      <text x="525" y="81" text-anchor="middle" fill="#71717a" font-size="9" font-family="JetBrains Mono, monospace">0%</text>
+      <circle cx="480" cy="96" r="6" fill="#6b7280" opacity="0.9"><title>Exit Rules: Not Started</title></circle><circle cx="502" cy="96" r="6" fill="#6b7280" opacity="0.9"><title>Risk Management: Not Started</title></circle>
+      <line x1="610" y1="70" x2="640" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+      <rect x="640" y="30" width="170" height="80" rx="10" fill="#0f0f16" stroke="#6b7280" stroke-width="2" opacity="0.95"/>
+      <text x="725" y="52" text-anchor="middle" fill="#e4e4e7" font-size="11" font-weight="600" font-family="Inter, sans-serif">⚡ Execution</text>
+      <rect x="652" y="64" width="146" height="6" rx="3" fill="#1e1e2e"/>
+      <rect x="652" y="64" width="0" height="6" rx="3" fill="#6b7280"/>
+      <text x="725" y="81" text-anchor="middle" fill="#71717a" font-size="9" font-family="JetBrains Mono, monospace">0%</text>
+      <circle cx="680" cy="96" r="6" fill="#6b7280" opacity="0.9"><title>Session Playbooks: Not Started</title></circle><circle cx="702" cy="96" r="6" fill="#6b7280" opacity="0.9"><title>MT5 Execution Spec: Not Started</title></circle>
+      <line x1="810" y1="70" x2="840" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+      <rect x="840" y="30" width="170" height="80" rx="10" fill="#0f0f16" stroke="#3b82f6" stroke-width="2" opacity="0.95"/>
+      <text x="925" y="52" text-anchor="middle" fill="#e4e4e7" font-size="11" font-weight="600" font-family="Inter, sans-serif">✅ Validation</text>
+      <rect x="852" y="64" width="146" height="6" rx="3" fill="#1e1e2e"/>
+      <rect x="852" y="64" width="37" height="6" rx="3" fill="#3b82f6"/>
+      <text x="925" y="81" text-anchor="middle" fill="#71717a" font-size="9" font-family="JetBrains Mono, monospace">25%</text>
+      <circle cx="880" cy="96" r="6" fill="#3b82f6" opacity="0.9"><title>Backtesting: Researching</title></circle>
+      
+  </svg></div>
+
+    <div class="ftmo">
+      <div class="ftmo-item"><div class="fl">Account</div><div class="fv">$10,000</div></div>
+      <div class="ftmo-item"><div class="fl">Profit Target</div><div class="fv">10% / 5%</div></div>
+      <div class="ftmo-item"><div class="fl">Daily Loss</div><div class="fv">5% ($500)</div></div>
+      <div class="ftmo-item"><div class="fl">Max Loss</div><div class="fv">10% ($1K)</div></div>
+      <div class="ftmo-item"><div class="fl">Trades/Day</div><div class="fv">~2.4</div></div>
+    </div>
+
+    
+    
+
+    
+    <section class="signals-section">
+      <h2>💡 Edge Signals</h2>
+      <p style="color:var(--td);font-size:.8rem;margin-bottom:.75rem">Promising ideas spotted during research. Worth deeper investigation.</p>
+      
+        <div class="signal">
+          <span class="signal-icon">💡</span>
+          <div class="signal-body">
+            <div class="signal-title">DXY Decoupling &amp; Gold's Safe-Haven Overlap</div>
+            <div class="signal-desc">The 2025 data shows DXY and XAUUSD both rising significantly (DXY -9% vs Gold +30% YTD), breaking their historical inverse correlation. This suggests gold is acting as a primary safe-haven during 'trade wars' and global turmoil, independent of dollar strength, offering a unique long opportunity when both typically move inversely.</div>
+            <div class="signal-meta">
+              <span class="signal-status spotted">spotted</span>
+              <span class="signal-comp">market_microstructure</span>
+            </div>
+          </div>
+        </div>
+        <div class="signal">
+          <span class="signal-icon">💡</span>
+          <div class="signal-body">
+            <div class="signal-title">Positive Gold-Yields in Dovish Fed Cycles</div>
+            <div class="signal-desc">Contrary to conventional wisdom, XAUUSD shows a strong positive correlation with US 10Y yields (r=0.65-0.78) specifically during dovish Fed cycles (e.g., H2 2024 rate cuts). This implies gold benefits from falling yields in a rate-cut environment, possibly due to increased liquidity or inflation expectations, providing a clear directional bias during such periods.</div>
+            <div class="signal-meta">
+              <span class="signal-status spotted">spotted</span>
+              <span class="signal-comp">market_microstructure</span>
+            </div>
+          </div>
+        </div>
+        <div class="signal">
+          <span class="signal-icon">💡</span>
+          <div class="signal-body">
+            <div class="signal-title">Intraday DXY-XAUUSD 15M RSI/SMA Divergence</div>
+            <div class="signal-desc">The specific intraday setup (15M RSI &gt;55 for XAUUSD, DXY rejecting session low, XAUUSD closing above Asian high, AND DXY &lt; 20-period SMA) offers a high-probability (80% win rate boost) inverse DXY confirmation for XAUUSD longs, leveraging precise timing and technical confluence during high-liquidity hours.</div>
+            <div class="signal-meta">
+              <span class="signal-status spotted">spotted</span>
+              <span class="signal-comp">market_microstructure</span>
+            </div>
+          </div>
+        </div>
+    </section>
+
+    <h2>What We Know So Far</h2>
+    <div class="cards">
+      
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">🔵</span>
+          <div class="card-title">Backtesting</div>
+          <span class="card-badge" style="color:#3b82f6">Researching</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#3b82f6"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">🔵</span>
+          <div class="card-title">Edge Hypothesis</div>
+          <span class="card-badge" style="color:#3b82f6">Researching</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#3b82f6"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">⬜</span>
+          <div class="card-title">Entry Rules</div>
+          <span class="card-badge" style="color:#6b7280">Not Started</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#6b7280"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">⬜</span>
+          <div class="card-title">MT5 Execution Spec</div>
+          <span class="card-badge" style="color:#6b7280">Not Started</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#6b7280"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">⬜</span>
+          <div class="card-title">Exit Rules</div>
+          <span class="card-badge" style="color:#6b7280">Not Started</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#6b7280"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">🔵</span>
+          <div class="card-title">FTMO Challenge Rules</div>
+          <span class="card-badge" style="color:#3b82f6">Researching</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#3b82f6"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">🔵</span>
+          <div class="card-title">XAUUSD Market Microstructure</div>
+          <span class="card-badge" style="color:#3b82f6">Researching</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#3b82f6"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">⬜</span>
+          <div class="card-title">Risk Management</div>
+          <span class="card-badge" style="color:#6b7280">Not Started</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#6b7280"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="card-icon">⬜</span>
+          <div class="card-title">Session Playbooks</div>
+          <span class="card-badge" style="color:#6b7280">Not Started</span>
+        </div>
+        <p class="card-eli5">Research not started yet</p>
+        
+        <div class="conf-bar"><div class="conf-fill" style="width:0%;background:#6b7280"></div></div>
+        <div class="card-conf-label">0% researched</div>
+        
+      </div>
+    </div>
+
+    <h2>Research Timeline</h2>
+    
+      <div class="tl-entry">
+        <span class="tl-night">⏳ Night 1</span>
+        <span class="tl-date">Mar 29</span>
+        <span class="tl-questions">7 questions</span>
+        
+      </div>
+
+    <footer>
+      <p>Gravity Edge by <a href="https://rsjo.io">rsjo.io</a> · Powered by Gravity Claw (Gemini + Perplexity Sonar Pro)</p>
+    </footer>
   </div>
 </body>
 </html>
